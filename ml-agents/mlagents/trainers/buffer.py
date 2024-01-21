@@ -207,7 +207,7 @@ class AgentBufferField(list):
         self[:] = []
 
     def padded_to_batch(
-        self, pad_value: np.float = 0, dtype: np.dtype = np.float32
+        self, pad_value = 0
     ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Converts this AgentBufferField (which is a List[BufferEntry]) into a numpy array
@@ -222,7 +222,7 @@ class AgentBufferField(list):
             dimension is equal to the length of the AgentBufferField.
         """
         if len(self) > 0 and not isinstance(self[0], list):
-            return np.asanyarray(self, dtype=dtype)
+            return np.asanyarray(self, dtype=float)
 
         shape = None
         for _entry in self:
@@ -238,7 +238,7 @@ class AgentBufferField(list):
         # Convert to numpy array while padding with 0's
         new_list = list(
             map(
-                lambda x: np.asanyarray(x, dtype=dtype),
+                lambda x: np.asanyarray(x, dtype=float),
                 itertools.zip_longest(*self, fillvalue=np.full(shape, pad_value)),
             )
         )

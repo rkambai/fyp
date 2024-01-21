@@ -15,6 +15,9 @@ from mlagents.trainers.action_info import ActionInfo
 from mlagents.trainers.settings import TrainerSettings
 from mlagents_envs.logging_util import get_logger
 
+from mlagents.trainers.CLIPEncoder import CLIPEncoder
+import numpy as np
+
 AllStepResult = Dict[BehaviorName, Tuple[DecisionSteps, TerminalSteps]]
 AllGroupSpec = Dict[BehaviorName, BehaviorSpec]
 
@@ -41,6 +44,13 @@ class EnvManager(ABC):
         self.policies: Dict[BehaviorName, Policy] = {}
         self.agent_managers: Dict[BehaviorName, AgentManager] = {}
         self.first_step_infos: List[EnvironmentStep] = []
+
+        ## ADD CLIP ENCODER
+        model_path = r"C:\Users\Rainer\fyp\Assets\Models\openai-clip-vit-large-patch14\model"
+        processor_path = r"C:\Users\Rainer\fyp\Assets\Models\openai-clip-vit-large-patch14"
+        self.encoder = CLIPEncoder(model_path, processor_path)
+        self.encoder.start_session()
+        self.prompt = "find the mirror"
 
     def set_policy(self, brain_name: BehaviorName, policy: Policy) -> None:
         self.policies[brain_name] = policy
@@ -143,8 +153,21 @@ class EnvManager(ABC):
                     name_behavior_id
                 ]
                 
-                ## PROCESS HERE?
-                
+                ## PROCESS HERE
+                threshold = 0.9
+                last_observation = decision_steps.obs[0].pop()
+                image_tensor = np.swapaxes(np.swapaxes(last_observation, 0, 2), 0, 1)
+                self.encoder.run_inference(self.prompt, image_tensor)
+                similarity = self.encoder.get_pairwise_similarity()
+                decision_steps.obs[0].append(image_tensor)
+                if similarity > threshold:
+                    decision_steps = TerminalSteps(
+                        decision_steps.obs,
+                        decision_steps.reward,
+                        decision_steps.agent_id,
+                        decision_steps.action_mask,
+                        decision_steps.group_id,
+                        decision_steps.group_reward)
 
                 self.agent_managers[name_behavior_id].add_experiences(
                     decision_steps,

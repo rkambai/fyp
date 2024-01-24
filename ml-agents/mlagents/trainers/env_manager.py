@@ -17,9 +17,11 @@ from mlagents_envs.logging_util import get_logger
 
 from mlagents.trainers.CLIPEncoder import CLIPEncoder
 import numpy as np
+from mlagents.trainers.cli_utils import load_config
 
 AllStepResult = Dict[BehaviorName, Tuple[DecisionSteps, TerminalSteps]]
 AllGroupSpec = Dict[BehaviorName, BehaviorSpec]
+FYP_CONFIG_PATH = r"C:\Users\Rainer\fyp\ml-agents\ml-agents\mlagents\fyp_config.yml"
 
 logger = get_logger(__name__)
 
@@ -46,11 +48,11 @@ class EnvManager(ABC):
         self.first_step_infos: List[EnvironmentStep] = []
 
         ## ADD CLIP ENCODER
-        model_path = r"C:\Users\Rainer\fyp\Assets\Models\openai-clip-vit-large-patch14\model"
-        processor_path = r"C:\Users\Rainer\fyp\Assets\Models\openai-clip-vit-large-patch14"
-        self.encoder = CLIPEncoder(model_path, processor_path)
+        self.fyp_config = load_config(FYP_CONFIG_PATH)
+        self.clip_config = self.fyp_config['CLIP']
+        self.encoder = CLIPEncoder(self.clip_config['model_path'], self.clip_config['processor_path'])
         self.encoder.start_session()
-        self.prompt = "find the mirror"
+        self.prompt = self.fyp_config['prompt']
 
     def set_policy(self, brain_name: BehaviorName, policy: Policy) -> None:
         self.policies[brain_name] = policy
@@ -152,22 +154,8 @@ class EnvManager(ABC):
                 decision_steps, terminal_steps = step_info.current_all_step_result[
                     name_behavior_id
                 ]
-                
-                ## PROCESS HERE
-                threshold = 0.9
-                last_observation = decision_steps.obs[0].pop()
-                image_tensor = np.swapaxes(np.swapaxes(last_observation, 0, 2), 0, 1)
-                self.encoder.run_inference(self.prompt, image_tensor)
-                similarity = self.encoder.get_pairwise_similarity()
-                decision_steps.obs[0].append(image_tensor)
-                if similarity > threshold:
-                    decision_steps = TerminalSteps(
-                        decision_steps.obs,
-                        decision_steps.reward,
-                        decision_steps.agent_id,
-                        decision_steps.action_mask,
-                        decision_steps.group_id,
-                        decision_steps.group_reward)
+
+                decision_steps = self.CLIPProcessStep(decision_steps)
 
                 self.agent_managers[name_behavior_id].add_experiences(
                     decision_steps,
@@ -182,3 +170,35 @@ class EnvManager(ABC):
                     step_info.environment_stats, step_info.worker_id
                 )
         return len(step_infos)
+    
+    def CLIPProcessStep(self, decision_steps):  
+        ## PROCESS HERE
+        threshold = 0.95
+        try:
+            current_observation = decision_steps[0].obs[-1] ## for agent 0
+        except:
+            return decision_steps
+        
+        self.encoder.run_inference(self.prompt, current_observation)
+        similarity = self.encoder.get_pairwise_similarity()
+        current_observation_repr = np.concatenate((self.encoder.image_embeds, self.encoder.text_embeds), axis = 0)
+        new_observation_repr = [current_observation_repr]
+        
+        if similarity > threshold:
+            new_decision_steps = TerminalSteps(
+                new_observation_repr,
+                1.0,
+                decision_steps.agent_id,
+                decision_steps.action_mask,
+                decision_steps.group_id,
+                decision_steps.group_reward)
+        else:
+            new_decision_steps = DecisionSteps(
+                new_observation_repr,
+                decision_steps.reward,
+                decision_steps.agent_id,
+                decision_steps.action_mask,
+                decision_steps.group_id,
+                decision_steps.group_reward)
+            
+        return new_decision_steps

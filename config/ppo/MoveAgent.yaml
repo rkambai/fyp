@@ -14,7 +14,7 @@ behaviors:
       normalize: false
       hidden_units: 128
       num_layers: 2
-      vis_encode_type: simple
+      vis_encode_type: fully_connected
       memory:
         sequence_length: 64
         memory_size: 128
@@ -25,8 +25,13 @@ behaviors:
       curiosity:
           strength: 0.9
           gamma: 0.99
+          network_settings:
+            normalize: false
+            hidden_units: 128
+            num_layers: 2
+            vis_encode_type: fully_connected
     keep_checkpoints: 5
-    max_steps: 10000000
+    max_steps: 100000
     time_horizon: 64
     summary_freq: 10000
     

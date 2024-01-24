@@ -207,7 +207,7 @@ class AgentBufferField(list):
         self[:] = []
 
     def padded_to_batch(
-        self, pad_value = 0
+        self, pad_value = 0.0
     ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Converts this AgentBufferField (which is a List[BufferEntry]) into a numpy array

@@ -9,6 +9,7 @@ from mlagents.trainers.torch_entities.encoders import (
     NatureVisualEncoder,
     SmallVisualEncoder,
     FullyConnectedVisualEncoder,
+    CLIPEncoder,
     VectorInput,
 )
 from mlagents.trainers.settings import EncoderType, ScheduleType
@@ -29,6 +30,7 @@ class ModelUtils:
         EncoderType.SIMPLE: 20,
         EncoderType.NATURE_CNN: 36,
         EncoderType.RESNET: 15,
+        EncoderType.CLIP: 1, ## no minimum i guess
     }
 
     VALID_VISUAL_PROP = frozenset(
@@ -129,6 +131,8 @@ class ModelUtils:
             EncoderType.RESNET: ResNetVisualEncoder,
             EncoderType.MATCH3: SmallVisualEncoder,
             EncoderType.FULLY_CONNECTED: FullyConnectedVisualEncoder,
+            EncoderType.CLIP: CLIPEncoder,
+
         }
         return ENCODER_FUNCTION_BY_TYPE.get(encoder_type)
 
@@ -209,6 +213,7 @@ class ModelUtils:
          - A list of embedding sizes (0 if the input requires to be processed with a variable length
          observation encoder)
         """
+        
         encoders: List[nn.Module] = []
         embedding_sizes: List[int] = []
         for obs_spec in observation_specs:

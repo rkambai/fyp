@@ -4,6 +4,14 @@ from mlagents.torch_utils import torch, nn
 from mlagents.trainers.torch_entities.layers import linear_layer, Initialization, Swish
 
 
+from mlagents.trainers.cli_utils import load_config
+from onnxruntime import InferenceSession
+from transformers import CLIPImageProcessor, CLIPTokenizerFast
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+FYP_CONFIG_PATH = r"C:\Users\Rainer\fyp\ml-agents\ml-agents\mlagents\fyp_config.yml"
+
+
 class Normalizer(nn.Module):
     def __init__(self, vec_obs_size: int):
         super().__init__()
@@ -284,3 +292,39 @@ class ResNetVisualEncoder(nn.Module):
         hidden = self.sequential(visual_obs)
         before_out = hidden.reshape(-1, self.final_flat_size)
         return torch.relu(self.dense(before_out))
+
+class CLIPEncoder(nn.Module):
+    def __init__(self, height: int, width: int, initial_channels: int, output_size: int):
+        super().__init__()
+        self.config = load_config(FYP_CONFIG_PATH)
+        self.model_path = self.config['CLIP']['model_path']
+        self.processor_path = self.config['CLIP']['processor_path']
+        self.prompt = self.config['prompt']
+        self.session = None
+        self.image_processor = None
+        self.tokenizer = None
+        self.start_session()
+
+    def start_session(self):
+        # Load CLIP model and processor
+        self.session = InferenceSession(f"{self.model_path}.onnx")
+        self.image_processor = CLIPImageProcessor.from_pretrained(f"{self.processor_path}")
+        self.tokenizer = CLIPTokenizerFast.from_pretrained(f"{self.processor_path}")
+
+    def run_inference(self, text, image):
+        do_rescale = bool(image.max() > 1)
+        tokenized_inputs = self.tokenizer(text=[text])
+        processed_image = self.image_processor.preprocess(images=image, return_tensors="pt", padding=True, input_data_format = "channels_first", do_rescale=do_rescale)
+        tokenized_inputs["pixel_values"] = processed_image.pixel_values
+        logits_per_image, logits_per_text, text_embeds, image_embeds = self.session.run(output_names=["logits_per_image", "logits_per_text", "text_embeds", "image_embeds"], input_feed=dict(tokenized_inputs))
+        self.logits_per_image = logits_per_image
+        self.logits_per_text = logits_per_text
+        self.text_embeds = text_embeds
+        self.image_embeds = image_embeds
+    
+    def get_pairwise_similarity(self):
+        return cosine_similarity(self.text_embeds, self.image_embeds)
+    
+    def forward(self, visual_obs: torch.Tensor) -> torch.Tensor:
+        self.run_inference(self.prompt, visual_obs)
+        return self.image_embeds

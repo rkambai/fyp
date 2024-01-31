@@ -15,7 +15,7 @@ from mlagents.trainers.action_info import ActionInfo
 from mlagents.trainers.settings import TrainerSettings
 from mlagents_envs.logging_util import get_logger
 
-from mlagents.trainers.CLIPEncoder import CLIPEncoder
+from mlagents.trainers.CLIPEncoderBase import CLIPEncoderBase
 import numpy as np
 from mlagents.trainers.cli_utils import load_config
 
@@ -47,12 +47,12 @@ class EnvManager(ABC):
         self.agent_managers: Dict[BehaviorName, AgentManager] = {}
         self.first_step_infos: List[EnvironmentStep] = []
 
-        ## ADD CLIP ENCODER
-        self.fyp_config = load_config(FYP_CONFIG_PATH)
-        self.clip_config = self.fyp_config['CLIP']
-        self.encoder = CLIPEncoder(self.clip_config['model_path'], self.clip_config['processor_path'])
-        self.encoder.start_session()
-        self.prompt = self.fyp_config['prompt']
+        # ## ADD CLIP ENCODER
+        # self.fyp_config = load_config(FYP_CONFIG_PATH)
+        # self.clip_config = self.fyp_config['CLIP']
+        # self.encoder = CLIPEncoder(self.clip_config['model_path'], self.clip_config['processor_path'])
+        # self.encoder.start_session()
+        # self.prompt = self.fyp_config['prompt']
 
     def set_policy(self, brain_name: BehaviorName, policy: Policy) -> None:
         self.policies[brain_name] = policy
@@ -155,7 +155,7 @@ class EnvManager(ABC):
                     name_behavior_id
                 ]
 
-                decision_steps = self.CLIPProcessStep(decision_steps)
+                # decision_steps = self.CLIPProcessStep(decision_steps)
 
                 self.agent_managers[name_behavior_id].add_experiences(
                     decision_steps,

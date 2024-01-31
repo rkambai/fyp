@@ -6,7 +6,7 @@ import numpy as np
 ## model_path: fyp/Assets/Models/openai-clip-vit-large-patch14/model
 ## processor_path: fyp/Assets/Models/openai-clip-vit-large-patch14
 
-class CLIPEncoder:
+class CLIPEncoderBase:
     def __init__(self, model_path: str, processor_path: str):
         self.model_path = model_path
         self.processor_path = processor_path

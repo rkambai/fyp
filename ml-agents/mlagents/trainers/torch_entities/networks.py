@@ -21,7 +21,6 @@ from mlagents.trainers.torch_entities.attention import (
 )
 from mlagents.trainers.exception import UnityTrainerException
 
-
 ActivationFunction = Callable[[torch.Tensor], torch.Tensor]
 EncoderFunction = Callable[
     [torch.Tensor, int, ActivationFunction, int, str, bool], torch.Tensor
@@ -45,6 +44,7 @@ class ObservationEncoder(nn.Module):
         Will use an RSA if needed for variable length observations.
         """
         super().__init__()
+
         self.processors, self.embedding_sizes = ModelUtils.create_input_processors(
             observation_specs,
             h_size,
@@ -68,6 +68,7 @@ class ObservationEncoder(nn.Module):
             if observation_specs[i].observation_type == ObservationType.GOAL_SIGNAL:
                 self._total_goal_enc_size += self.embedding_sizes[i]
                 self._goal_processor_indices.append(i)
+        
 
     @property
     def total_enc_size(self) -> int:

@@ -47,12 +47,12 @@ class EnvManager(ABC):
         self.agent_managers: Dict[BehaviorName, AgentManager] = {}
         self.first_step_infos: List[EnvironmentStep] = []
 
-        # ## ADD CLIP ENCODER
-        # self.fyp_config = load_config(FYP_CONFIG_PATH)
-        # self.clip_config = self.fyp_config['CLIP']
-        # self.encoder = CLIPEncoder(self.clip_config['model_path'], self.clip_config['processor_path'])
-        # self.encoder.start_session()
-        # self.prompt = self.fyp_config['prompt']
+        ## ADD CLIP ENCODER
+        self.fyp_config = load_config(FYP_CONFIG_PATH)
+        self.clip_config = self.fyp_config['CLIP']
+        self.encoder = CLIPEncoderBase(self.clip_config['model_path'], self.clip_config['processor_path'])
+        self.encoder.start_session()
+        self.prompt = self.fyp_config['prompt']
 
     def set_policy(self, brain_name: BehaviorName, policy: Policy) -> None:
         self.policies[brain_name] = policy
@@ -155,7 +155,8 @@ class EnvManager(ABC):
                     name_behavior_id
                 ]
 
-                # decision_steps = self.CLIPProcessStep(decision_steps)
+                ## ADD PROCESS HERE
+                decision_steps = self.CLIPProcessStep(decision_steps)
 
                 self.agent_managers[name_behavior_id].add_experiences(
                     decision_steps,
@@ -171,34 +172,23 @@ class EnvManager(ABC):
                 )
         return len(step_infos)
     
-    def CLIPProcessStep(self, decision_steps):  
-        ## PROCESS HERE
-        threshold = 0.95
-        try:
-            current_observation = decision_steps[0].obs[-1] ## for agent 0
-        except:
-            return decision_steps
+    def CLIPProcessStep(self, decision_steps):
+
+        new_rewards = decision_steps.reward
+        for batch_obs in decision_steps.obs:
+            for agent_idx, obs in enumerate(batch_obs):
+                print(obs.shape)
+                self.encoder.run_inference(self.prompt, obs)
+                r_similarity = self.encoder.r_similarity
+                new_rewards[agent_idx] += r_similarity
+                print(self.encoder.observation_goal_similarity)
         
-        self.encoder.run_inference(self.prompt, current_observation)
-        similarity = self.encoder.get_pairwise_similarity()
-        current_observation_repr = np.concatenate((self.encoder.image_embeds, self.encoder.text_embeds), axis = 0)
-        new_observation_repr = [current_observation_repr]
-        
-        if similarity > threshold:
-            new_decision_steps = TerminalSteps(
-                new_observation_repr,
-                1.0,
-                decision_steps.agent_id,
-                decision_steps.action_mask,
-                decision_steps.group_id,
-                decision_steps.group_reward)
-        else:
-            new_decision_steps = DecisionSteps(
-                new_observation_repr,
-                decision_steps.reward,
-                decision_steps.agent_id,
-                decision_steps.action_mask,
-                decision_steps.group_id,
-                decision_steps.group_reward)
+        new_decision_steps = DecisionSteps(
+            decision_steps.obs,
+            new_rewards,
+            decision_steps.agent_id,
+            decision_steps.action_mask,
+            decision_steps.group_id,
+            decision_steps.group_reward)
             
         return new_decision_steps

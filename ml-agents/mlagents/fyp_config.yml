@@ -1,10 +1,17 @@
+use_clip: false
+
 CLIP:
   model_path: C:\Users\Rainer\fyp\Assets\Models\openai-clip-vit-large-patch14\model
   processor_path: C:\Users\Rainer\fyp\Assets\Models\openai-clip-vit-large-patch14
 
-prompt: mirror
+prompt: mirror # toilet bowl
 
 target_location:
   mirror:
     x: 4.356f
     z: -0.243f
+
+  toilet bowl:
+    x:
+    z:
+

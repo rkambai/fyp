@@ -53,6 +53,7 @@ class EnvManager(ABC):
         self.encoder = CLIPEncoderBase(self.clip_config['model_path'], self.clip_config['processor_path'])
         self.encoder.start_session()
         self.prompt = self.fyp_config['prompt']
+        self.use_clip = self.fyp_config['use_clip']
 
     def set_policy(self, brain_name: BehaviorName, policy: Policy) -> None:
         self.policies[brain_name] = policy
@@ -156,7 +157,8 @@ class EnvManager(ABC):
                 ]
 
                 ## ADD PROCESS HERE
-                decision_steps = self.CLIPProcessStep(decision_steps)
+                if self.use_clip:
+                    decision_steps = self.CLIPProcessStep(decision_steps)
 
                 self.agent_managers[name_behavior_id].add_experiences(
                     decision_steps,
@@ -177,12 +179,10 @@ class EnvManager(ABC):
         new_rewards = decision_steps.reward
         for batch_obs in decision_steps.obs:
             for agent_idx, obs in enumerate(batch_obs):
-                print(obs.shape)
                 self.encoder.run_inference(self.prompt, obs)
-                r_similarity = self.encoder.r_similarity
+                r_similarity = self.encoder.r_similarity_linear
                 new_rewards[agent_idx] += r_similarity
-                print(self.encoder.observation_goal_similarity)
-        
+
         new_decision_steps = DecisionSteps(
             decision_steps.obs,
             new_rewards,

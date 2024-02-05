@@ -42,14 +42,20 @@ class CLIPEncoderBase:
         return F.cosine_similarity(torch.tensor(self.text_embeds),torch.tensor(self.image_embeds), dim = 1).detach().item()
     
     @property
-    def r_similarity(self):
+    def r_similarity_log(self):
         # Ensure b is greater than 0
         if self.similarity_lower_bound > 0:
             # Calculate rsimilarity using the formula
             r_similarity = math.log(max(self.similarity_lower_bound, self.observation_goal_similarity))
             ## TODO: ADJUST R SIM TO RETURN SCALED FROM LOWER BOUND TO 0, CURRENTLY LOWER BOUND TOO STRICT THE AGENT NOT LEARNING
+
             return r_similarity  # Convert to Python float for easy printing
         else:
             # Handle the case where b is not greater than 0
             print("Error: b must be greater than 0.")
             return None
+
+    @property
+    def r_similarity_linear(self):
+        ## Changes the value that determines orthogonality, but monotonic increasing still preserved which is what i care about
+        return (self.observation_goal_similarity - 1)/2

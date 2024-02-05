@@ -2,8 +2,8 @@ behaviors:
   MoveAgent:
     trainer_type: ppo
     hyperparameters:
-      batch_size: 128
-      buffer_size: 1024
+      batch_size: 512
+      buffer_size: 5120
       learning_rate: 0.0003
       beta: 0.03
       epsilon: 0.2
@@ -22,16 +22,16 @@ behaviors:
       extrinsic:
         gamma: 0.99
         strength: 1.0
-      curiosity:
-          strength: 0.9
-          gamma: 0.99
-          network_settings:
-            normalize: false
-            hidden_units: 128
-            num_layers: 2
-            vis_encode_type: simple
+      # curiosity:
+      #     strength: 0.9
+      #     gamma: 0.99
+      #     network_settings:
+      #       normalize: false
+      #       hidden_units: 128
+      #       num_layers: 2
+      #       vis_encode_type: simple
     keep_checkpoints: 5
-    max_steps: 100000
+    max_steps: 250000
     time_horizon: 64
-    summary_freq: 1000
+    summary_freq: 2500
     

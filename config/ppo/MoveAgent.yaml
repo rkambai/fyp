@@ -22,16 +22,46 @@ behaviors:
       extrinsic:
         gamma: 0.99
         strength: 1.0
-      # curiosity:
-      #     strength: 0.9
-      #     gamma: 0.99
-      #     network_settings:
-      #       normalize: false
-      #       hidden_units: 128
-      #       num_layers: 2
-      #       vis_encode_type: simple
+      curiosity:
+          strength: 0.1
+          gamma: 0.99
+          learning_rate: 1e-5
+          network_settings:
+            normalize: false
+            hidden_units: 128
+            num_layers: 2
+            vis_encode_type: simple
     keep_checkpoints: 5
-    max_steps: 250000
+    max_steps: 200000
     time_horizon: 64
     summary_freq: 2500
+
+## NOTE: lesson completion criteria not required for terminal lesson
+# target_x_easy 4.356
+# target_x_hard 7.5
+
+# target_z_easy -0.243
+# target_z_hard -4.5
     
+environment_parameters: ## DOCS: https://github.com/Unity-Technologies/ml-agents/blob/develop/docs/Training-ML-Agents.md#environment-parameters
+  target_x:
+    curriculum: ## list of lessons (note the "-")
+      - name: MyFirstLesson # value holds x-coordinate of "easy" target
+        completion_criteria: &first_lesson_criteria
+          measure: reward
+          behavior: MoveAgent
+          signal_smoothing: true
+          min_lesson_length: 5
+          threshold: 0.0
+          require_reset: true
+        value: 4.356
+      - name: MySecondLesson # value holds x-coordinate of "difficult" target (lesson two)
+        value: 7.5
+    
+  target_z:
+    curriculum: ## list of lessons (note the "-")
+      - name: MyFirstLesson # value holds x-coordinate of "easy" target
+        completion_criteria: *first_lesson_criteria
+        value: -0.243
+      - name: MySecondLesson
+        value: -4.5

@@ -44,21 +44,21 @@ behaviors:
 # target_z_hard -4.5
     
 environment_parameters: ## DOCS: https://github.com/Unity-Technologies/ml-agents/blob/develop/docs/Training-ML-Agents.md#environment-parameters
-  target_x:
+  target_x: ## x coordinate of target 
     curriculum: ## list of lessons (note the "-")
       - name: MyFirstLesson # value holds x-coordinate of "easy" target
         completion_criteria: &first_lesson_criteria
-          measure: reward
+          measure: progress
           behavior: MoveAgent
           signal_smoothing: true
-          min_lesson_length: 5
-          threshold: 0.0
+          min_lesson_length: 1
+          threshold: 0.1 ## 20 000 steps
           require_reset: true
         value: 4.356
       - name: MySecondLesson # value holds x-coordinate of "difficult" target (lesson two)
         value: 7.5
     
-  target_z:
+  target_z: ## z coordinate of target
     curriculum: ## list of lessons (note the "-")
       - name: MyFirstLesson # value holds x-coordinate of "easy" target
         completion_criteria: *first_lesson_criteria

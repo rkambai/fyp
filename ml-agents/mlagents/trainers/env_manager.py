@@ -16,7 +16,6 @@ from mlagents.trainers.settings import TrainerSettings
 from mlagents_envs.logging_util import get_logger
 
 from mlagents.trainers.CLIPEncoderBase import CLIPEncoderBase
-import numpy as np
 from mlagents.trainers.cli_utils import load_config
 
 AllStepResult = Dict[BehaviorName, Tuple[DecisionSteps, TerminalSteps]]
@@ -52,8 +51,10 @@ class EnvManager(ABC):
         self.clip_config = self.fyp_config['CLIP']
         self.encoder = CLIPEncoderBase(self.clip_config['model_path'], self.clip_config['processor_path'])
         self.encoder.start_session()
-        self.prompt = self.fyp_config['prompt']
+        self.prompt = self.fyp_config['target_enum'][0]['prompt']
+        self.next_lesson_measure = self.fyp_config['lesson_threshold'] * self.fyp_config['max_steps']
         self.use_clip = self.fyp_config['use_clip']
+        self.global_step_count = 0
 
     def set_policy(self, brain_name: BehaviorName, policy: Policy) -> None:
         self.policies[brain_name] = policy
@@ -135,6 +136,7 @@ class EnvManager(ABC):
                     self.set_policy(brain_name, _policy)
         # Step the environments
         new_step_infos = self._step()
+        self.global_step_count += 1
         return new_step_infos
 
     def process_steps(self, new_step_infos: List[EnvironmentStep]) -> int:
@@ -143,6 +145,9 @@ class EnvManager(ABC):
         return num_step_infos
 
     def _process_step_infos(self, step_infos: List[EnvironmentStep]) -> int:
+
+        if self.global_step_count >= self.next_lesson_measure:
+            self.prompt = self.fyp_config['target_enum'][1]['prompt']
         for step_info in step_infos:
             for name_behavior_id in step_info.name_behavior_ids:
                 if name_behavior_id not in self.agent_managers:

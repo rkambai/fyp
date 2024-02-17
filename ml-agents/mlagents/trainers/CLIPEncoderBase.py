@@ -29,7 +29,7 @@ class CLIPEncoderBase:
     def run_inference(self, text, image):
         do_rescale = bool(np.max(image.flatten()) > 1)
         tokenized_inputs = self.tokenizer(text=[text])
-        processed_image = self.image_processor.preprocess(images=image, return_tensors="pt", padding=True, input_data_format = "channels_first", do_rescale=do_rescale)
+        processed_image = self.image_processor.preprocess(images=image, return_tensors="pt", padding=True, input_data_format = "channels_first", do_rescale=do_rescale, do_normalize=False)
         tokenized_inputs["pixel_values"] = processed_image.pixel_values.detach().numpy()
         logits_per_image, logits_per_text, text_embeds, image_embeds = self.session.run(output_names=["logits_per_image", "logits_per_text", "text_embeds", "image_embeds"], input_feed=dict(tokenized_inputs))
         self.logits_per_image = logits_per_image

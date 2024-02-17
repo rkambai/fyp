@@ -20,8 +20,8 @@ from mlagents.trainers.cli_utils import load_config
 
 AllStepResult = Dict[BehaviorName, Tuple[DecisionSteps, TerminalSteps]]
 AllGroupSpec = Dict[BehaviorName, BehaviorSpec]
-FYP_CONFIG_PATH = r"C:\Users\Rainer\fyp\ml-agents\ml-agents\mlagents\fyp_config.yml"
-# FYP_CONFIG_PATH = r"/content/fyp/ml-agents/mlagents/fyp_config.yml"
+# FYP_CONFIG_PATH = r"C:\Users\Rainer\fyp\ml-agents\ml-agents\mlagents\fyp_config.yml"
+FYP_CONFIG_PATH = r"/content/fyp/ml-agents/mlagents/fyp_config.yml"
 
 logger = get_logger(__name__)
 

@@ -20,8 +20,8 @@ from mlagents.trainers.cli_utils import load_config
 
 AllStepResult = Dict[BehaviorName, Tuple[DecisionSteps, TerminalSteps]]
 AllGroupSpec = Dict[BehaviorName, BehaviorSpec]
-# FYP_CONFIG_PATH = r"C:\Users\Rainer\fyp\ml-agents\ml-agents\mlagents\fyp_config.yml"
-FYP_CONFIG_PATH = r"/content/fyp/ml-agents/mlagents/fyp_config.yml"
+FYP_CONFIG_PATH = r"C:\Users\Rainer\fyp\ml-agents\ml-agents\mlagents\fyp_config.yml"
+# FYP_CONFIG_PATH = r"/content/fyp/ml-agents/mlagents/fyp_config.yml"
 
 logger = get_logger(__name__)
 
@@ -182,12 +182,14 @@ class EnvManager(ABC):
     
     def CLIPProcessStep(self, decision_steps):
 
+        r_similarity_multiplier = 0.01
+
         new_rewards = decision_steps.reward
         for batch_obs in decision_steps.obs:
             for agent_idx, obs in enumerate(batch_obs):
                 self.encoder.run_inference(self.prompt, obs)
                 r_similarity = self.encoder.r_similarity_linear
-                new_rewards[agent_idx] += r_similarity
+                new_rewards[agent_idx] += (r_similarity * r_similarity_multiplier)
 
         new_decision_steps = DecisionSteps(
             decision_steps.obs,

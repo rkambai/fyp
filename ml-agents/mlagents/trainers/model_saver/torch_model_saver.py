@@ -9,10 +9,14 @@ from mlagents.trainers.settings import TrainerSettings, SerializationSettings
 from mlagents.trainers.policy.torch_policy import TorchPolicy
 from mlagents.trainers.optimizer.torch_optimizer import TorchOptimizer
 from mlagents.trainers.torch_entities.model_serialization import ModelSerializer
+from mlagents.trainers.cli_utils import load_config
 
 
 logger = get_logger(__name__)
-DEFAULT_CHECKPOINT_NAME = "checkpoint.pt"
+
+fyp_config = load_config(r"C:\Users\Rainer\fyp\ml-agents\ml-agents\mlagents\fyp_config.yml")
+# DEFAULT_CHECKPOINT_NAME = "checkpoint.pt"
+DEFAULT_CHECKPOINT_NAME = fyp_config['use_checkpoint']
 
 
 class TorchModelSaver(BaseModelSaver):

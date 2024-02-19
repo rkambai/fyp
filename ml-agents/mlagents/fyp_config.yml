@@ -1,4 +1,4 @@
-use_clip: false
+use_clip: true
 
 CLIP:
   model_path: C:\Users\Rainer\fyp\Assets\Models\openai-clip-vit-large-patch14\model
@@ -17,4 +17,4 @@ target_enum:
 
 max_steps: 200000
 lesson_threshold: 0.1
-
+use_checkpoint: MoveAgent-35778.pt

@@ -10,11 +10,12 @@ behaviors:
       lambd: 0.95
       num_epoch: 3
       learning_rate_schedule: linear
+    checkpoint_interval: 10000
     network_settings:
       normalize: false
-      hidden_units: 128
-      num_layers: 2
-      vis_encode_type: simple
+      hidden_units: 1536 ## 128 normally, 768 if CLIP (768*2=1536 for horizontally concat text and image embeddings)
+      num_layers: 1
+      vis_encode_type: CLIP
       # memory:
       #   sequence_length: 64
       #   memory_size: 128
@@ -35,7 +36,7 @@ behaviors:
     max_steps: 200000
     time_horizon: 64
     summary_freq: 2500
-
+    
 ## NOTE: lesson completion criteria not required for terminal lesson
 # target_x_easy 4.356
 # target_x_hard 7.5

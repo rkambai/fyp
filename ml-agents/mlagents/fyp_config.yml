@@ -1,20 +1,17 @@
-use_clip: true
-
 CLIP:
   model_path: C:\Users\Rainer\fyp\Assets\Models\openai-clip-vit-large-patch14\model
   processor_path: C:\Users\Rainer\fyp\Assets\Models\openai-clip-vit-large-patch14
-
+global_prompt: mirror
+lesson_threshold: 0.1
+max_steps: 200000
 target_enum:
   0:
     prompt: mirror
     x: 4.356f
     z: -0.243f
-
   1:
     prompt: toilet
     x: 7.5f
     z: -4.5f
-
-max_steps: 200000
-lesson_threshold: 0.1
-use_checkpoint: MoveAgent-35778.pt
+use_checkpoint: checkpoint.pt
+use_clip: false

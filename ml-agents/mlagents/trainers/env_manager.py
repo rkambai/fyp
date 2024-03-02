@@ -17,6 +17,7 @@ from mlagents_envs.logging_util import get_logger
 
 from mlagents.trainers.CLIPEncoderBase import CLIPEncoderBase
 from mlagents.trainers.cli_utils import load_config
+import yaml
 
 AllStepResult = Dict[BehaviorName, Tuple[DecisionSteps, TerminalSteps]]
 AllGroupSpec = Dict[BehaviorName, BehaviorSpec]
@@ -49,18 +50,23 @@ class EnvManager(ABC):
 
         ## ADD CLIP ENCODER
         self.fyp_config = load_config(FYP_CONFIG_PATH)
-        self.clip_config = self.fyp_config['CLIP']
-        self.encoder = CLIPEncoderBase(self.clip_config['model_path'], self.clip_config['processor_path'])
-        self.encoder.start_session()
-        self.prompt = self.fyp_config['target_enum'][0]['prompt']
-        self.next_lesson_measure = self.fyp_config['lesson_threshold'] * self.fyp_config['max_steps']
         self.use_clip = self.fyp_config['use_clip']
-        self.global_step_count = 0
+        if self.use_clip:
+            self.clip_config = self.fyp_config['CLIP']
+            self.encoder = CLIPEncoderBase(self.clip_config['model_path'], self.clip_config['processor_path'])
+            self.encoder.start_session()
+            self.prompt = self.fyp_config['global_prompt']
+        self.next_lesson_measure = self.fyp_config['lesson_threshold'] * self.fyp_config['max_steps']
+        self.global_step_count = None
 
     def set_policy(self, brain_name: BehaviorName, policy: Policy) -> None:
         self.policies[brain_name] = policy
         if brain_name in self.agent_managers:
             self.agent_managers[brain_name].policy = policy
+
+        if self.global_step_count is None:
+            self.global_step_count = policy.get_current_step()
+            logger.info(f"initializing global step count to: {self.global_step_count}")
 
     def set_agent_manager(
         self, brain_name: BehaviorName, manager: AgentManager
@@ -147,8 +153,18 @@ class EnvManager(ABC):
 
     def _process_step_infos(self, step_infos: List[EnvironmentStep]) -> int:
 
-        if self.global_step_count >= self.next_lesson_measure:
-            self.prompt = self.fyp_config['target_enum'][1]['prompt']
+        if self.global_step_count == 0:
+            new_prompt = self.fyp_config['target_enum'][0]['prompt']
+            self.prompt = new_prompt
+            logger.info(f"setting prompt: {new_prompt}")
+            self.update_global_prompt(new_prompt)
+
+        if self.global_step_count == self.next_lesson_measure:
+            new_prompt = self.fyp_config['target_enum'][1]['prompt']
+            self.prompt = new_prompt
+            logger.info(f"setting prompt: {new_prompt}")
+            self.update_global_prompt(new_prompt)
+
         for step_info in step_infos:
             for name_behavior_id in step_info.name_behavior_ids:
                 if name_behavior_id not in self.agent_managers:
@@ -200,3 +216,11 @@ class EnvManager(ABC):
             decision_steps.group_reward)
             
         return new_decision_steps
+
+    def update_global_prompt(self, new_prompt):
+        with open(FYP_CONFIG_PATH, mode="r") as f:
+                conf = yaml.safe_load(f)
+                conf['global_prompt'] = new_prompt
+
+        with open(FYP_CONFIG_PATH, mode="w") as f:
+            yaml.safe_dump(conf, stream=f)

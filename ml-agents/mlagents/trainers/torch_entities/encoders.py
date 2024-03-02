@@ -299,10 +299,11 @@ class CLIPEncoder(nn.Module):
         self.config = load_config(FYP_CONFIG_PATH)
         self.model_path = self.config['CLIP']['model_path']
         self.processor_path = self.config['CLIP']['processor_path']
-        self.prompt = self.config['prompt']
+        self.prompt = self.config['global_prompt']
         self.session = None
         self.image_processor = None
         self.tokenizer = None
+        self.output_size = output_size
         self.start_session()
 
     def start_session(self):
@@ -312,19 +313,20 @@ class CLIPEncoder(nn.Module):
         self.tokenizer = CLIPTokenizerFast.from_pretrained(f"{self.processor_path}")
 
     def run_inference(self, text, image):
-        do_rescale = bool(image.max() > 1)
+        do_rescale = bool(torch.max(image).item() > 1)
         tokenized_inputs = self.tokenizer(text=[text])
         processed_image = self.image_processor.preprocess(images=image, return_tensors="pt", padding=True, input_data_format = "channels_first", do_rescale=do_rescale)
-        tokenized_inputs["pixel_values"] = processed_image.pixel_values
+        tokenized_inputs["pixel_values"] = processed_image.pixel_values.detach().numpy()
         logits_per_image, logits_per_text, text_embeds, image_embeds = self.session.run(output_names=["logits_per_image", "logits_per_text", "text_embeds", "image_embeds"], input_feed=dict(tokenized_inputs))
-        self.logits_per_image = logits_per_image
-        self.logits_per_text = logits_per_text
-        self.text_embeds = text_embeds
-        self.image_embeds = image_embeds
-    
-    def get_pairwise_similarity(self):
-        return cosine_similarity(self.text_embeds, self.image_embeds)
+        self.logits_per_image = torch.tensor(logits_per_image, dtype = torch.float)
+        self.logits_per_text = torch.tensor(logits_per_text, dtype = torch.float)
+        self.text_embeds = torch.tensor(text_embeds, dtype = torch.float)
+        self.image_embeds = torch.tensor(image_embeds, dtype = torch.float)
     
     def forward(self, visual_obs: torch.Tensor) -> torch.Tensor:
+        self.config = load_config(FYP_CONFIG_PATH)
+        self.prompt = self.config['global_prompt']
         self.run_inference(self.prompt, visual_obs)
-        return self.image_embeds
+        self.text_embeds = self.text_embeds.repeat(self.image_embeds.shape[0], 1)
+        text_and_image_embeds = torch.concat((self.image_embeds, self.text_embeds), dim = 1)
+        return text_and_image_embeds
